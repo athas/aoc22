@@ -5,3 +5,4 @@
 !futhark.pkg
 !.gitignore
 !README.md
+!Makefile

@@ -21,3 +21,13 @@ entry part2 (s: string[]) =
   |> reverse
   |> take 3
   |> foldl (+) 0
+
+-- ==
+-- entry: part1
+-- input @ data/1.input
+-- output { 68802 }
+
+-- ==
+-- entry: part2
+-- input @ data/1.input
+-- output { 205370 }
