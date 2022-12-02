@@ -36,10 +36,10 @@ entry part2 s = s |> parse |> map counter |> map score |> i32.sum
 
 -- ==
 -- entry: part1
--- input @ data/1.input
+-- input @ data/2.input
 -- output { 12156 }
 
 -- ==
 -- entry: part2
--- input @ data/1.input
+-- input @ data/2.input
 -- output { 10835 }
