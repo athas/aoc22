@@ -1,3 +1,5 @@
+-- A bit repetitive, but very straightforward and trivial parallelism.
+
 import "utils"
 
 def parse [n] (s: string[n]) =

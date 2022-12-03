@@ -1,3 +1,6 @@
+-- Nicely solved by using bitmasks to model the sets, but
+-- unfortunately needs irregular parallelism.
+
 import "lib/github.com/diku-dk/segmented/segmented"
 import "utils"
 
@@ -21,3 +24,14 @@ entry part2 (s: string[]) =
                 & reduce (|) 0 (map mask l2)
                 & reduce (|) 0 (map mask l3))
   in unflatten (length ls / 3) 3 ls |> map on_group |> i32.sum
+
+-- ==
+-- entry: part1
+-- input @ data/3.input
+-- output { 7701 }
+
+
+-- ==
+-- entry: part2
+-- input @ data/3.input
+-- output { 2644 }
