@@ -50,3 +50,6 @@ module lines : {
      |> uncurry zip
      |> map (\(i, j) -> ([],i, if j < i then n-i-1 else j-i-1)))
 }
+
+def count 'a (p: a -> bool) (xs: []a): i32 =
+  xs |> map p |> map i32.bool |> i32.sum
