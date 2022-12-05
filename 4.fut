@@ -2,9 +2,6 @@
 
 import "utils"
 
-def span p xs =
-  split (loop i = 0 while i < length xs && !p xs[i] do i + 1) xs
-
 def parse (s: string[]) =
   let (get,ls) = lines.lines s
   in map (\l -> let (a,b) = span (==',') (get l)

@@ -53,3 +53,6 @@ module lines : {
 
 def count 'a (p: a -> bool) (xs: []a): i32 =
   xs |> map p |> map i32.bool |> i32.sum
+
+def span p xs =
+  split (loop i = 0 while i < length xs && !p xs[i] do i + 1) xs
