@@ -16,7 +16,6 @@ jobs:
       with:
         version: 'nightly'
 
-    - run: |
-        futhark pkg sync
-        make -j
-        futhark test --pass-compiler-option=--Werror *.fut
+    - run: futhark pkg sync
+    - run: make -j
+    - run: futhark test --pass-compiler-option=--Werror *.fut
