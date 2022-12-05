@@ -1,4 +1,4 @@
-*
+/*
 !*.input
 !*.fut
 !*.py
@@ -6,3 +6,4 @@
 !.gitignore
 !README.md
 !Makefile
+!.github

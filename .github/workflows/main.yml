@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  test-on-nightly:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Futhark
+      uses: diku-dk/install-futhark@v1.1.0
+      with:
+        version: 'nightly'
+
+    - run: |
+        futhark sync
+        futhark test --pass-compiler-option=--Werror *.fut
