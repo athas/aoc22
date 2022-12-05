@@ -18,4 +18,5 @@ jobs:
 
     - run: |
         futhark pkg sync
+        make -j
         futhark test --pass-compiler-option=--Werror *.fut
