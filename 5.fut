@@ -27,13 +27,12 @@ entry part1 s =
       loop (counts,state) = (map (count (!=' ')) state, copy state)
       for (num,from,to) in moves do
         loop (counts,state) for _i < num do
-        let counts_to = counts[to]
-        let state[to,counts_to] = state[from,counts[from]-1]
+        let state[to,counts[to]] = state[from,counts[from]-1]
         let counts[to] = counts[to] + 1
         let counts[from] = counts[from] - 1
         in (counts, state)
     in (map2 (\c s -> s[c-1]) counts state)
-  in s |> parse |> trace |> sim
+  in s |> parse |> sim
 
 entry part2 s =
   let sim (state: [][]u8, moves) =
@@ -44,12 +43,11 @@ entry part2 s =
           (counts,state) =
           (counts with [from] = counts[from] - num, state)
         for i < num do
-        let counts_to = counts[to]
-        let state[to,counts_to] = state[from,counts[from]+i]
+        let state[to,counts[to]] = state[from,counts[from]+i]
         let counts[to] = counts[to] + 1
         in (counts, state)
     in (map2 (\c s -> s[c-1]) counts state)
-  in s |> parse |> trace |> sim
+  in s |> parse |> sim
 
 -- ==
 -- entry: part1
