@@ -12,13 +12,12 @@ entry part1 (s: string[]) =
   in map5 f s (rotate 1 s) (rotate 2 s) (rotate 3 s) (indices s) |> i32.minimum
 
 entry part2 [n] (s: string[n]) =
-  let f i =
-    if i < n-13 &&
-       all (<2) (hist (+) 0 26
-                      (map (i64.u8 <-< (u8.-'a')) (take 14 (drop i s)))
+  let f (w,i) =
+    if all (<2) (hist (+) 0 26
+                      (map (i64.u8 <-< (u8.-'a')) w)
                       (replicate 14 1))
     then i32.i64 i + 14 else i32.highest
-  in map f (indices s) |> i32.minimum
+  in windows 14 s |> (id &&& indices) |> uncurry zip |> map f |> i32.minimum
 
 -- ==
 -- entry: part1

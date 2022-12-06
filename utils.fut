@@ -56,3 +56,6 @@ def count 'a (p: a -> bool) (xs: []a): i32 =
 
 def span p xs =
   split (loop i = 0 while i < length xs && !p xs[i] do i + 1) xs
+
+def windows k s =
+  map (\i -> take k (drop i s)) (take (length s - k) (indices s))
