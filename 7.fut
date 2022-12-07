@@ -6,9 +6,6 @@
 
 import "utils"
 
-let testinput =
-  "$ cd /\n$ ls\ndir a\n14848514 b.txt\n8504156 c.dat\ndir d\n$ cd a\n$ ls\ndir e\n29116 f\n2557 g\n62596 h.lst\n$ cd e\n$ ls\n584 i\n$ cd ..\n$ cd ..\n$ cd d\n$ ls\n4060174 j\n8033020 d.log\n5626152 d.ext\n7214296 k\n"
-
 type op = #ls | #cd | #dotdot | #dir | #file i32
 
 def parse_line (s: string[]) : op =
@@ -23,13 +20,7 @@ def dir_sizes (s: string[]) =
   let deepen op = match op case #cd -> 1
                            case #dotdot -> -1
                            case _ -> 0
-  let interesting (op: op) = match op case #dotdot -> false
-                                      case #ls -> false
-                                      case #dir -> false
-                                      case _ -> true
-  let (ops,depths) = zip ops (exscan (+) 0 (map deepen ops))
-                     |> filter ((.0) >-> interesting)
-                     |> unzip
+  let depths = exscan (+) 0 (map deepen ops)
   let find_parent i d =
     loop i while i > 0 && depths[i] >= d do i - 1
   let max_depth = i32.maximum depths
@@ -54,12 +45,19 @@ entry part1 (s: string[]) =
 entry part2 (s: string[]) =
   let dirs = dir_sizes s
   let available = 70000000
-  let unused = trace (available - dirs[0])
   let need = 30000000
+  let unused = available - dirs[0]
   let to_obtain = need-unused
-  in dirs |> filter (>=to_obtain) |> i32.minimum
+  in dirs
+     |> filter (>=to_obtain)
+     |> i32.minimum
 
 -- ==
 -- entry: part1
 -- input @ data/7.input
 -- output { 1306611 }
+
+-- ==
+-- entry: part2
+-- input @ data/7.input
+-- output { 13210366 }
