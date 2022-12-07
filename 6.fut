@@ -13,9 +13,7 @@ entry part1 (s: string[]) =
 
 entry part2 [n] (s: string[n]) =
   let f (w,i) =
-    if all (<2) (hist (+) 0 26
-                      (map (i64.u8 <-< (u8.-'a')) w)
-                      (replicate 14 1))
+    if w |> map (\x -> u32.u8 x - 'a') |> map (1<<) |> reduce (^) 0 |> u32.popc |> (==14)
     then i32.i64 i + 14 else i32.highest
   in windows 14 s |> (id &&& indices) |> uncurry zip |> map f |> i32.minimum
 
