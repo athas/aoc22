@@ -59,3 +59,8 @@ def span p xs =
 
 def windows k s =
   map (\i -> take k (drop i s)) (take (length s - k) (indices s))
+
+def is_digit (c: u8) = c >= '0' && c <= '9'
+
+def exscan 'a [n] (op: a -> a -> a) (ne: a) (as: [n]a) : *[n]a =
+  scan op ne (map2 (\i a -> if i == 0 then ne else a) (indices as) (rotate (-1) as))
