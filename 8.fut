@@ -4,8 +4,6 @@
 
 import "utils"
 
-def test = "30373\n25512\n65332\n33549\n35390\n"
-
 def visible (xs: []i32) =
   xs |> (id &&& exscan i32.max i32.lowest) |> uncurry (map2 (>))
 
