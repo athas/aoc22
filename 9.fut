@@ -26,6 +26,8 @@ type pos = (i32,i32)
 def pos_add (a: pos) (b: pos) = (a.0 + b.0, a.1 + b.1)
 def pos_sub (a: pos) (b: pos) = (a.0 - b.0, a.1 - b.1)
 
+def coords moves = scan pos_add (0,0) moves
+
 def move (d: dir) : pos =
   match d case #U -> (0,1)
           case #D -> (0,-1)
@@ -55,16 +57,16 @@ def unmove (p: pos) : dir =
 -- 6 7 8
 --
 -- Represented as a single 64-bit number, with 4 bits per field.
-type movvec = u64
+type perm = u64
 
-def tovec (xs: [9]i32) : movvec =
-  let f i = u64.i32 xs[i32.u64 i]<<(i*4)
+def tovec (xs: [9]u64) : perm =
+  let f i = xs[i32.u64 i]<<(i*4)
   in f 0 | f 1 | f 2 | f 3 | f 4 | f 5 | f 6 | f 7 | f 8
 
-def movvec_lookup (i: i32) (x: movvec) : i32 =
-  i32.u64 ((x >> (u64.i32 i * 4)) & 0b1111)
+def perm_lookup (i: u64) (x: perm) : u64 =
+  (x >> (i * 4)) & 0b1111
 
-def movvec (d: dir): movvec =
+def perm (d: dir): perm =
   match d case #U  -> tovec [3,4,5, 6,7,8, 7,7,7]
           case #D  -> tovec [1,1,1, 0,1,2, 3,4,5]
           case #L  -> tovec [1,2,5, 4,5,5, 7,8,5]
@@ -75,32 +77,24 @@ def movvec (d: dir): movvec =
           case #DR -> tovec [0,1,1, 3,0,1, 3,3,4]
           case #C  -> tovec [0,1,2, 3,4,5, 6,7,8]
 
-def movvec_compose (a: movvec) (b: movvec): movvec =
-  tovec [movvec_lookup (movvec_lookup 0 a) b,
-         movvec_lookup (movvec_lookup 1 a) b,
-         movvec_lookup (movvec_lookup 2 a) b,
-         movvec_lookup (movvec_lookup 3 a) b,
-         movvec_lookup (movvec_lookup 4 a) b,
-         movvec_lookup (movvec_lookup 5 a) b,
-         movvec_lookup (movvec_lookup 6 a) b,
-         movvec_lookup (movvec_lookup 7 a) b,
-         movvec_lookup (movvec_lookup 8 a) b]
+def perm_compose (a: perm) (b: perm): perm =
+  tovec [perm_lookup (perm_lookup 0 a) b,
+         perm_lookup (perm_lookup 1 a) b,
+         perm_lookup (perm_lookup 2 a) b,
+         perm_lookup (perm_lookup 3 a) b,
+         perm_lookup (perm_lookup 4 a) b,
+         perm_lookup (perm_lookup 5 a) b,
+         perm_lookup (perm_lookup 6 a) b,
+         perm_lookup (perm_lookup 7 a) b,
+         perm_lookup (perm_lookup 8 a) b]
 
-def idx_to_dir (x: i32) : dir =
-  match x case 0 -> #UL
-          case 1 -> #U
-          case 2 -> #UR
-          case 3 -> #L
-          case 4 -> #C
-          case 5 -> #R
-          case 6 -> #DL
-          case 7 -> #D
-          case _ -> #DR
+def idx_to_dir (x: u64) : dir =
+  ([#UL, #U, #UR, #L, #C, #R, #DL, #D, #DR])[i32.u64 x]
 
 def move_tail dirs =
-  map movvec dirs
-  |> scan movvec_compose (movvec #C)
-  |> map (movvec_lookup 4)
+  map perm dirs
+  |> scan perm_compose (perm #C)
+  |> map (perm_lookup 4)
   |> map idx_to_dir
 
 def count_visits poses =
@@ -127,13 +121,13 @@ let compute_tail (heads, dirs) =
 
 entry part1 s =
   let dirs = moves s
-  let heads = scan pos_add (0,0) (map move dirs)
+  let heads = coords (map move dirs)
   let (tails, _) = compute_tail (heads,dirs)
   in count_visits tails
 
 entry part2 s =
   let dirs = moves s
-  let heads = scan pos_add (0,0) (map move dirs)
+  let heads = coords (map move dirs)
   let (tails, _) = iterate 9 compute_tail (heads,dirs)
   in count_visits tails
 
