@@ -53,25 +53,40 @@ def unmove (p: pos) : dir =
 -- 0 1 2
 -- 3 4 5
 -- 6 7 8
-type movvec = [9]i8
+--
+-- Represented as a single 64-bit number, with 4 bits per field.
+type movvec = u64
+
+def tovec (xs: [9]i32) : movvec =
+  let f i = u64.i32 xs[i32.u64 i]<<(i*4)
+  in f 0 | f 1 | f 2 | f 3 | f 4 | f 5 | f 6 | f 7 | f 8
+
+def movvec_lookup (i: i32) (x: movvec) : i32 =
+  i32.u64 ((x >> (u64.i32 i * 4)) & 0b1111)
 
 def movvec (d: dir): movvec =
-  match d case #U  -> [3,4,5, 6,7,8, 7,7,7]
-          case #D  -> [1,1,1, 0,1,2, 3,4,5]
-          case #L  -> [1,2,5, 4,5,5, 7,8,5]
-          case #R  -> [3,0,1, 3,3,4, 3,6,7]
-          case #UL -> [4,5,5, 7,8,5, 7,7,8]
-          case #DL -> [1,1,2, 1,2,5, 4,5,5]
-          case #UR -> [3,3,4, 3,6,7, 6,7,7]
-          case #DR -> [0,1,1, 3,0,1, 3,3,4]
-          case #C  -> [0,1,2, 3,4,5, 6,7,8]
+  match d case #U  -> tovec [3,4,5, 6,7,8, 7,7,7]
+          case #D  -> tovec [1,1,1, 0,1,2, 3,4,5]
+          case #L  -> tovec [1,2,5, 4,5,5, 7,8,5]
+          case #R  -> tovec [3,0,1, 3,3,4, 3,6,7]
+          case #UL -> tovec [4,5,5, 7,8,5, 7,7,8]
+          case #DL -> tovec [1,1,2, 1,2,5, 4,5,5]
+          case #UR -> tovec [3,3,4, 3,6,7, 6,7,7]
+          case #DR -> tovec [0,1,1, 3,0,1, 3,3,4]
+          case #C  -> tovec [0,1,2, 3,4,5, 6,7,8]
 
 def movvec_compose (a: movvec) (b: movvec): movvec =
-  [b[a[0]], b[a[1]], b[a[2]],
-   b[a[3]], b[a[4]], b[a[5]],
-   b[a[6]], b[a[7]], b[a[8]]]
+  tovec [movvec_lookup (movvec_lookup 0 a) b,
+         movvec_lookup (movvec_lookup 1 a) b,
+         movvec_lookup (movvec_lookup 2 a) b,
+         movvec_lookup (movvec_lookup 3 a) b,
+         movvec_lookup (movvec_lookup 4 a) b,
+         movvec_lookup (movvec_lookup 5 a) b,
+         movvec_lookup (movvec_lookup 6 a) b,
+         movvec_lookup (movvec_lookup 7 a) b,
+         movvec_lookup (movvec_lookup 8 a) b]
 
-def idx_to_dir (x: i8) : dir =
+def idx_to_dir (x: i32) : dir =
   match x case 0 -> #UL
           case 1 -> #U
           case 2 -> #UR
@@ -85,7 +100,7 @@ def idx_to_dir (x: i8) : dir =
 def move_tail dirs =
   map movvec dirs
   |> scan movvec_compose (movvec #C)
-  |> map (.[4])
+  |> map (movvec_lookup 4)
   |> map idx_to_dir
 
 def count_visits poses =
