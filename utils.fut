@@ -64,3 +64,13 @@ def is_digit (c: u8) = c >= '0' && c <= '9'
 
 def exscan 'a [n] (op: a -> a -> a) (ne: a) (as: [n]a) : *[n]a =
   scan op ne (map2 (\i a -> if i == 0 then ne else a) (indices as) (rotate (-1) as))
+
+-- Finds smallest element greater than x.
+def binsearch [n] 't (lte: t -> t -> bool) (xs: [n]t) (x: t) : i64 =
+  let (_, end) =
+    loop (start,end) = (0,n-1) while start <= end do
+    let mid = (start+end)/2
+    in if xs[mid] `lte` x
+       then (mid+1,end)
+       else (start,mid-1)
+  in end
