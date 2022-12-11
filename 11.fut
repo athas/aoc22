@@ -118,3 +118,8 @@ entry part2 s =
      |> reverse
      |> take 2
      |> i64.product
+
+-- ==
+-- entry: part2
+-- input @ data/11.input
+-- output { 13237873355i64 }
