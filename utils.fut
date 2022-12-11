@@ -9,7 +9,7 @@ def is_digit (c: u8) = c >= '0' && c <= '9'
 
 def atoi [n] (s: string[n]): i32 =
   let (sign,s) = if n > 0 && s[0] == '-' then (-1,drop 1 s) else (1,s)
-  in sign * (loop (acc,i) = (0,0) while i < n do
+  in sign * (loop (acc,i) = (0,0) while i < length s do
                if is_digit s[i]
                then (acc * 10 + dtoi s[i], i+1)
                else (acc, n)).0
