@@ -99,3 +99,5 @@ def binsearch [n] 't (lte: t -> t -> bool) (xs: [n]t) (x: t) : i64 =
        then (mid+1,end)
        else (start,mid-1)
   in end
+
+def exactly [n] 't (m: i64) (arr: [n]t) : [m]t = arr :> [m]t
