@@ -20,10 +20,10 @@ def movable [n][m] (grid: [n][m]char) (i:i64,j:i64) (x,y) =
   (grid[i,j] == 'S' || grid[x,y] == 'E' || grid[i,j] + 1 >= grid[x,y])
 
 def node_num_edges [n][m] (grid: [n][m]char) (i,j) =
-  i32.bool (movable grid (i,j) (i-1,j))
-  + i32.bool (movable grid (i,j) (i+1,j))
-  + i32.bool (movable grid (i,j) (i,j-1))
-  + i32.bool (movable grid (i,j) (i,j+1))
+  i64.bool (movable grid (i,j) (i-1,j))
+  + i64.bool (movable grid (i,j) (i+1,j))
+  + i64.bool (movable grid (i,j) (i,j-1))
+  + i64.bool (movable grid (i,j) (i,j+1))
 
 def to_flat [n][m] (_: [n][m]char) (i,j) = i * m + j
 
@@ -31,7 +31,7 @@ def node_edge [n][m] (grid: [n][m]char) (i, j) (e: i64) =
   -- Very gross; really wish I came up with a way to write this as a
   -- closed form.
   let ps = [(i-1,j),(i+1,j),(i,j-1),(i,j+1)]
-  in i32.i64 (to_flat grid (filter (movable grid (i,j)) ps)[e])
+  in to_flat grid (filter (movable grid (i,j)) ps)[e]
 
 #[noinline]
 def parse_grid (s: string[]) =
@@ -48,12 +48,12 @@ def parse_grid (s: string[]) =
   in (start, end, grid)
 
 #[noinline]
-def parse1 (s: string[]) =
+def parse1 (s: string[]) : ([]u8,i64,i64,graph[][]) =
   let [n][m] (start, end, grid: [n][m]char) = parse_grid s
   let coords = tabulate_2d n m (\i j -> (i,j)) |> flatten
   let nodes_n_edges = map (node_num_edges grid) coords
   let nodes_start_index = exscan (+) 0 nodes_n_edges
-  let edges_dest = expand (node_num_edges grid >-> i64.i32) (node_edge grid) coords
+  let edges_dest = expand (node_num_edges grid) (node_edge grid) coords
   in (flatten grid |> matches coords,
       to_flat grid start,
       to_flat grid end,
