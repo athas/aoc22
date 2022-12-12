@@ -18,7 +18,7 @@ def invert_graph [n][e]
   let edges_dest =
     replicated_iota (map i64.i32 g.nodes_n_edges)
     |> map i32.i64
-    |> utils.exactly e
+    |> utils.matches g.edges_dest
     |> zip g.edges_dest
     |> radix_sort_by_key (.0) i32.num_bits i32.get_bit
     |> map (.1)

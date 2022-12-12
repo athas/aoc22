@@ -8,22 +8,6 @@ import "lib/github.com/diku-dk/segmented/segmented"
 import "lib/github.com/diku-dk/sorts/radix_sort"
 import "bfs"
 
-type opt 'a = #some a | #none
-
-def from_opt 'a x (y: opt a) =
-  match y case #some y' -> y'
-          case #none -> x
-
-def find 'a (p: a->bool) (xs:[]a) : opt a =
-  let op a b =
-    match (a,b)
-    case (#none, b) -> b
-    case (a, #none) -> a
-    case _ -> a
-  in xs
-     |> map (\x -> if p x then #some x else #none)
-     |> reduce op #none
-
 def find_index_of [n][m] (grid: [n][m]char) (c: char) : (i64,i64) =
   tabulate_2d n m (\i j -> ((i,j), grid[i,j] == c))
   |> flatten
@@ -66,11 +50,11 @@ def parse_grid (s: string[]) =
 #[noinline]
 def parse1 (s: string[]) =
   let [n][m] (start, end, grid: [n][m]char) = parse_grid s
-  let [k] (coords: [k](i64,i64)) = tabulate_2d n m (\i j -> (i,j)) |> flatten
+  let coords = tabulate_2d n m (\i j -> (i,j)) |> flatten
   let nodes_n_edges = map (node_num_edges grid) coords
   let nodes_start_index = exscan (+) 0 nodes_n_edges
   let edges_dest = expand (node_num_edges grid >-> i64.i32) (node_edge grid) coords
-  in (flatten grid |> exactly k,
+  in (flatten grid |> matches coords,
       to_flat grid start,
       to_flat grid end,
       {nodes_n_edges,

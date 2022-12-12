@@ -101,3 +101,21 @@ def binsearch [n] 't (lte: t -> t -> bool) (xs: [n]t) (x: t) : i64 =
   in end
 
 def exactly [n] 't (m: i64) (arr: [n]t) : [m]t = arr :> [m]t
+
+def matches [n][m] 'a 'b (_: [m]b) (as: [n]a) : [m]a = as :> [m]a
+
+type opt 'a = #some a | #none
+
+def from_opt 'a x (y: opt a) =
+  match y case #some y' -> y'
+          case #none -> x
+
+def find 'a (p: a->bool) (xs:[]a) : opt a =
+  let op a b =
+    match (a,b)
+    case (#none, b) -> b
+    case (a, #none) -> a
+    case _ -> a
+  in xs
+     |> map (\x -> if p x then #some x else #none)
+     |> reduce op #none
