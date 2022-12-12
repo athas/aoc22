@@ -1,8 +1,32 @@
+module utils = import "utils"
+import "lib/github.com/diku-dk/segmented/segmented"
+import "lib/github.com/diku-dk/sorts/radix_sort"
+
+type graph [n][e] = {nodes_start_index: [n]i32,
+                     nodes_n_edges: [n]i32,
+                     edges_dest: [e]i32}
+
+def node_indices [n][e] (_: graph[n][e]) : [n]i64 = iota n
+def edge_indices [n][e] (_: graph[n][e]) : [e]i64 = iota e
+
+def invert_graph [n][e]
+    (g: graph [n][e]) : graph [][] =
+  let nodes_n_edges =
+    hist (+) 0 n (map i64.i32 g.edges_dest) (map (const 1) g.edges_dest)
+  let nodes_start_index =
+    utils.exscan (+) 0 nodes_n_edges
+  let edges_dest =
+    replicated_iota (map i64.i32 g.nodes_n_edges)
+    |> map i32.i64
+    |> utils.exactly e
+    |> zip g.edges_dest
+    |> radix_sort_by_key (.0) i32.num_bits i32.get_bit
+    |> map (.1)
+  in {nodes_n_edges, nodes_start_index, edges_dest}
+
 type^ step_fn [n][e] =
   (cost: *[n]i32)
-  -> (nodes_start_index: [n]i32)
-  -> (nodes_n_edges: [n]i32)
-  -> (edges_dest: [e]i32)
+  -> graph [n][e]
   -> (graph_visited: [n]bool)
   -> (graph_mask: *[n]bool)
   -> (updating_graph_mask: *[n]bool)
@@ -10,9 +34,7 @@ type^ step_fn [n][e] =
 
 def generic_bfs [n][e]
                 (step: step_fn [n][e])
-                (nodes_start_index: [n]i32)
-                (nodes_n_edges: [n]i32)
-                (edges_dest: [e]i32)
+                (graph: graph [n][e])
                 (is_source: []bool): [n]i32 =
     let (graph_mask, graph_visited, cost) = (copy is_source,
                                              copy is_source,
@@ -22,8 +44,7 @@ def generic_bfs [n][e]
            (cost, graph_mask, graph_visited, replicate n false, true)
       while continue do
         let (cost', graph_mask', updating_graph_mask') =
-          step cost nodes_start_index nodes_n_edges edges_dest
-               graph_visited graph_mask updating_graph_mask
+          step cost graph graph_visited graph_mask updating_graph_mask
 
         let step2_inds = map2 (\x i -> if x then i else -1) updating_graph_mask' (iota n)
 
@@ -46,9 +67,7 @@ def generic_bfs [n][e]
 
 def step [n][e]
         (cost: *[n]i32)
-        (nodes_start_index: [n]i32)
-        (nodes_n_edges: [n]i32)
-        (edges_dest: [e]i32)
+        ({nodes_start_index,nodes_n_edges,edges_dest}: graph [n][e])
         (graph_visited: [n]bool)
         (graph_mask: *[n]bool)
         (updating_graph_mask: *[n]bool) : (*[n]i32, *[n]bool, *[n]bool) =

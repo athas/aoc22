@@ -8,8 +8,6 @@ import "lib/github.com/diku-dk/segmented/segmented"
 import "lib/github.com/diku-dk/sorts/radix_sort"
 import "bfs"
 
-def testinput = "Sabqponm\nabcryxxl\naccszExk\nacctuvwj\nabdefghi\n"
-
 type opt 'a = #some a | #none
 
 def from_opt 'a x (y: opt a) =
@@ -75,40 +73,19 @@ def parse1 (s: string[]) =
   in (flatten grid |> exactly k,
       to_flat grid start,
       to_flat grid end,
-      nodes_n_edges,
-      nodes_start_index,
-      edges_dest)
+      {nodes_n_edges,
+       nodes_start_index,
+       edges_dest})
 
 entry part1 (s: string[]) =
-  let (_,start,end,nodes_n_edges,nodes_start_index,edges_dest) = parse1 s
-  let costs = bfs nodes_start_index nodes_n_edges edges_dest
-                  (map (==start) (indices nodes_n_edges))
+  let (_,start,end,g) = parse1 s
+  let costs = bfs g (map (==start) (node_indices g))
   in costs[end]
 
-def invert_graph [n][e]
-                 (nodes_n_edges: [n]i32)
-                 (_nodes_start_index: [n]i32)
-                 (edges_dest: [e]i32)
-               : ([n]i32, [n]i32, [e]i32)=
-  let nodes_n_edges' =
-    hist (+) 0 n (map i64.i32 edges_dest) (map (const 1) edges_dest)
-  let nodes_start_index' =
-    exscan (+) 0 nodes_n_edges'
-  let edges_dest' =
-    replicated_iota (map i64.i32 nodes_n_edges)
-    |> map i32.i64
-    |> exactly e
-    |> zip edges_dest
-    |> radix_sort_by_key (.0) i32.num_bits i32.get_bit
-    |> map (.1)
-  in (nodes_n_edges', nodes_start_index', edges_dest')
-
 entry part2 (s: string[]) =
-  let (grid,_,end,nodes_n_edges,nodes_start_index,edges_dest) = parse1 s
-  let (nodes_n_edges,nodes_start_index,edges_dest) =
-    invert_graph nodes_n_edges nodes_start_index edges_dest
-  let costs = bfs nodes_start_index nodes_n_edges edges_dest
-                  (map (==end) (indices nodes_n_edges))
+  let (grid,_,end,g) = parse1 s
+  let g' = invert_graph g
+  let costs = bfs g' (map (==end) (node_indices g))
   in zip grid costs
      |> filter (\(x,y) -> x == 'a' && y > 0)
      |> map (.1)
