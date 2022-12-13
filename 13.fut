@@ -64,10 +64,10 @@ entry part2 s =
 
 -- ==
 -- entry: part1
--- input @ data/13.in
+-- input @ data/13.input
 -- output { 5808i64 }
 
 -- ==
 -- entry: part2
--- input @ data/13.in
+-- input @ data/13.input
 -- output { 22713i64 }
