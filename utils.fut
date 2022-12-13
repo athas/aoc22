@@ -7,6 +7,8 @@ def dtoi (c: u8): i32 = i32.u8 c - '0'
 
 def is_digit (c: u8) = c >= '0' && c <= '9'
 
+def isnt_digit = not <-< is_digit
+
 def atoi [n] (s: string[n]): i32 =
   let (sign,s) = if n > 0 && s[0] == '-' then (-1,drop 1 s) else (1,s)
   in sign * (loop (acc,i) = (0,0) while i < length s do
