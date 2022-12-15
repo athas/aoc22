@@ -123,3 +123,10 @@ def find 'a (p: a->bool) (xs:[]a) : opt a =
      |> reduce op #none
 
 def pad_to k x xs = concat_to k xs (replicate (k - length xs) x)
+
+def argmin 'a (lte: a -> a -> bool) (as: []a) : i64 =
+  let cmp i j = match (i,j)
+                case (-1, _) -> j
+                case (_, -1) -> i
+                case _ -> if as[i] `lte` as[j] then i else j
+  in reduce cmp (-1) (indices as)

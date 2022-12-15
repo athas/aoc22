@@ -6,8 +6,6 @@
 import "utils"
 import "lib/github.com/diku-dk/segmented/segmented"
 
-def testinput = "498,4 -> 498,6 -> 496,6\n503,4 -> 502,4 -> 502,9 -> 494,9\n"
-
 type pos = (i32,i32)
 
 def linesegs (s: string[]) : [](pos,pos) =
