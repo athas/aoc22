@@ -6,6 +6,8 @@
 
 import "utils"
 
+def testinput = "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB\nValve BB has flow rate=13; tunnels lead to valves CC, AA\nValve CC has flow rate=2; tunnels lead to valves DD, BB\nValve DD has flow rate=20; tunnels lead to valves CC, AA, EE\nValve EE has flow rate=3; tunnels lead to valves FF, DD\nValve FF has flow rate=0; tunnels lead to valves EE, GG\nValve GG has flow rate=0; tunnels lead to valves FF, HH\nValve HH has flow rate=22; tunnel leads to valve GG\nValve II has flow rate=0; tunnels lead to valves AA, JJ\nValve JJ has flow rate=21; tunnel leads to valve II\n"
+
 type valve = {flow: i32, tunnels: [5]i64}
 
 def far: i32 = 1000000
@@ -52,19 +54,18 @@ def parse s : (i64,[]valve) =
   let link {flow,tunnels} = {flow,tunnels=map link' tunnels}
   in (start,map link valves)
 
-def eval [n] (start: i32) (flow: [n]i32) (adj: [n][n]i32) (steps: []i32) =
-  let (sum, _, remaining) =
-    loop (sum, here, remaining) = (0,start,30) for there in steps do
-    let t = adj[here,there] + 1
-    let remaining = remaining - t
-    in (sum + remaining * flow[there],
-        there,
-        remaining)
-  in (remaining, sum)
+def eval_step [n] (flow: [n]i32) (adj: [n][n]i32)
+                  (value: i32) (here: i32) (remaining: i32)
+                  (there: i32) =
+  let t = adj[here,there] + 1
+  let remaining = remaining - t
+  in (value + remaining * flow[there],
+      there,
+      remaining)
 
 -- The first 'i' nodes of 'nodes' have been visited in the given
 -- order, and the rest are in arbitrary order.
-type path [n] = {nodes:[n]i32,remaining:i32,value:i32}
+type path [n] = {nodes:[n]i32,remaining:i32,value:i32,here:i32}
 
 def invalid (p: path[]) = p.remaining < 0
 
@@ -75,27 +76,31 @@ def next_node [n] (nodes: *[n]i32) (i: i64) (j: i64) : *[n]i32 =
   let nodes[i+j] = tmp
   in nodes
 
-def grow [n] (start: i32) (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: path[n]) : [](path[n]) =
+def grow [n] (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: path[n]) : [](path[n]) =
   tabulate (n-i) (\j ->
                     let nodes = next_node (copy p.nodes) i j
-                    let (remaining,value) = eval start flow adj (take (i+1) nodes)
-                    in {nodes,remaining,value})
+                    let (value,there,remaining) =
+                      eval_step flow adj p.value p.here p.remaining nodes[i]
+                    in {nodes,remaining,value,here=there})
 
-def evolve [n] (start: i32) (flow: [n]i32) (adj: [n][n]i32) (ps: [](path[n])) : [](path[n]) =
-  (loop (ps,i) = (ps,0) while i < n do
-   let n' = n-trace i
-   in (ps ++
-          filter (invalid >-> not)
-          (flatten (map (\p -> grow start flow adj i p |> exactly n') ps)),
-       i+1))
-  |> (.0)
+def evolve [n] (flow: [n]i32) (adj: [n][n]i32) (ps: [](path[n])) : [](path[n]) =
+  (loop (done,front,i) = ([],ps,0) while i < n do
+   let n' = n-i
+   let new = filter (invalid >-> not)
+                    (flatten (map (\p -> grow flow adj i p |> exactly n') front))
+   in (done ++ front, new, i+1))
+  |> (\(done,front,_) -> done ++ front)
 
 entry part1 s =
   let (start,vs) = parse s
-  let [n] (flow : [n]i32,adj : [n][n]i32) = adjacency vs |> find_paths |> shrink start (map (.flow) vs)
-  let start = i32.i64 (n-1)
-  let (remaining,value) = eval start flow adj []
-  let res = evolve start flow adj [{nodes=map i32.i64 (iota n),remaining,value}]
+  let [n] (flow : [n]i32,adj : [n][n]i32) =
+    adjacency vs |> find_paths |> shrink start (map (.flow) vs)
+  let start = if start == 0 then 0 else i32.i64 (n-1)
+  let (remaining,value) = (30,0)
+  let res = evolve flow adj [{nodes=map i32.i64 (iota n),
+                              here=start,
+                              remaining,
+                              value}]
   let best = map (.value) res |> i32.maximum
   let best_path = from_opt res[0] (find (\p -> p.value == best) res)
   in best_path.value
