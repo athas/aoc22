@@ -1,9 +1,9 @@
 -- This is the one; the most sequential one of them all.  Even the
 -- input has no parallelism to exploit!
+--
+-- Neither me nor Futhark is suitable for this kind of programming.
 
 import "utils"
-
-def testinput = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>\n"
 
 def width (piece: i64) : i64 =
   match piece
@@ -69,9 +69,6 @@ def put_piece [h] (piece: i64) ((x,y):(i64,i64)) (world: *[h][7]char) =
                   with [h-1-(y-1),x+1] = 1
   case _ -> assert false world
 
-type cycle = ()
-def no_cycle: cycle = ()
-
 def place [h] [j]
               (J: [j]u8)
               (T: *[h][7]u8) (jet: i64) (piece: i64) (maxy: i64) :
@@ -79,28 +76,67 @@ def place [h] [j]
   let pos = (2, maxy + 3 + height piece)
   let (_, pos, jet) =
     loop (go,pos,jet) = (true,pos,jet) while go do
-    let pos = push piece pos J[(jet%j)] T
+    let pos = push piece pos J[jet%j] T
     in match fall piece pos T
-       case #some pos -> (true,pos,jet+1)
-       case #none -> (false,pos,jet+1)
-  in (put_piece piece pos T, jet, (piece + 1)%5, i64.max maxy pos.1)
+       case #some pos -> (true,pos,(jet+1)%j)
+       case #none -> (false,pos,(jet+1)%j)
+  in (put_piece piece pos T, jet, (piece+1)%5, i64.max maxy pos.1)
 
+def ground_shape [h] (T: [h][7]u8) (maxy: i64): opt u64 =
+  let T' = T[h-1-maxy:]
+  let get r i = r[i] << u8.i32 i
+  let mask r = u64.u8 (get r 0 | get r 1 | get r 2 | get r 3 | get r 4 | get r 5 | get r 6)
+  in if length T' >= 4
+     then let (a,b,c,d) = (mask T'[0], mask T'[1], mask T'[2], mask T'[3])
+          in if a|b|c|d == 0b1111111
+             then #some ((a << 0) | (b << 8) | (c << 16)  | (d << 24))
+             else #none
+     else #none
+
+type cycle = ((i64,i64,u64), (i64,i64))
+
+def find_cycle [c] (cycles: [c]cycle) (num_cycles: i64) (key: (i64,i64,u64)) : opt (i64,i64) =
+  match find ((.0) >-> (==key)) (take num_cycles cycles)
+  case #none -> #none
+  case #some (_,v) -> #some v
+
+#[noinline]
 def solve [j] (J: [j]u8) (count: i64) =
   let h = 20000
-  let c = 200
+  let c = 20000
   let T = replicate h (replicate 7 0)
-  let cycles = replicate c no_cycle
+  let cycles = replicate c ((0,0,0), (0,0))
+  let num_cycles = 0
   let (jet, maxy, piece, additional) = (0,-1,0,0)
-  let (T, _, _, maxy, _) =
-    loop (T, jet, piece, maxy, count) while count > 0 do
+  let (_, _, _, _, additional, maxy, _, _) =
+    loop (count, T, jet, piece, additional, maxy, cycles, num_cycles) while count > 0 do
     let (T, jet, piece, maxy) = place J T jet piece maxy
     let count = count - 1
-    in (T, jet, piece, maxy, count)
-  in maxy + additional + 1
+    in match ground_shape T maxy
+       case #some mask ->
+         let (additional, count) =
+           match find_cycle cycles num_cycles (jet,piece,mask)
+           case #some (oldmaxy, oldcount) ->
+             let additional = additional + (maxy - oldmaxy) * (count / (oldcount - count))
+             let count = count % (oldcount - count)
+             in (additional, count)
+           case #none -> (additional, count)
+         let cycles[num_cycles] = ((jet, piece, mask), (maxy, count))
+         let num_cycles = num_cycles + 1
+         in (count, T, jet, piece, additional, maxy, cycles, num_cycles)
+       case #none -> (count, T, jet, piece, additional, maxy, cycles, num_cycles)
+  in additional + maxy + 1
 
 entry part1 s = solve (init s) 2022
+
+entry part2 s = solve (init s) 1000000000000
 
 -- ==
 -- entry: part1
 -- input @ data/17.input
 -- output { 3130i64 }
+
+-- ==
+-- entry: part2
+-- input @ data/17.input
+-- output { 1556521739139i64 }
