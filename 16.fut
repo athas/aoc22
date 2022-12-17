@@ -1,6 +1,10 @@
-import "utils"
+-- I did not enjoy this one at all.  I am considering giving up on
+-- AOC.  I really wish these problems were calibrated to be solvable
+-- without too much time investment; I'm just looking for fun little
+-- tasks to do every day in December!  I have enough real challenges
+-- at my job.
 
-def testinput = "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB\nValve BB has flow rate=13; tunnels lead to valves CC, AA\nValve CC has flow rate=2; tunnels lead to valves DD, BB\nValve DD has flow rate=20; tunnels lead to valves CC, AA, EE\nValve EE has flow rate=3; tunnels lead to valves FF, DD\nValve FF has flow rate=0; tunnels lead to valves EE, GG\nValve GG has flow rate=0; tunnels lead to valves FF, HH\nValve HH has flow rate=22; tunnel leads to valve GG\nValve II has flow rate=0; tunnels lead to valves AA, JJ\nValve JJ has flow rate=21; tunnel leads to valve II\n"
+import "utils"
 
 type valve = {flow: i32, tunnels: [5]i64}
 
@@ -19,15 +23,15 @@ def find_paths [n] (adj: [n][n]i32) =
   let adj' = update adj
   in (adj', map2 (map2 (!=)) adj adj' |> flatten |> or)
 
-def shrink [n] (flow: [n]i32) (adj: [n][n]i32) =
-  let keep = map2 (\i f -> i == 0 || f > 0) (indices flow) flow
+def shrink [n] (keep: i64) (flow: [n]i32) (adj: [n][n]i32) =
+  let keep = map2 (\i f -> i == keep || f > 0) (indices flow) flow
   let n' = i64.i32 (count id keep)
   let shrink' l = zip keep l |> filter (.0) |> map (.1) |> exactly n'
   in (shrink' flow,
       adj |> map shrink' |> shrink')
 
 #[noinline]
-def parse s : []valve =
+def parse s : (i64,[]valve) =
   let (get,ls) = lines.lines s
   let mkcode a b = i32.u8 a*256 + i32.u8 b
   let on_line l =
@@ -40,21 +44,63 @@ def parse s : []valve =
                         else -1
     in (code, {flow, tunnels=tabulate 5 mktunnel})
   let (codes, valves) = unzip (map on_line ls)
+  let start = zip codes (indices codes)
+              |> find ((.0) >-> (==mkcode 'A' 'A'))
+              |> from_opt (-1,-1)
+              |> (.1)
   let link' x = if x == -1 then -1 else index_of_first (==x) codes
   let link {flow,tunnels} = {flow,tunnels=map link' tunnels}
-  in map link valves
+  in (start,map link valves)
 
-def eval [n] (flow: [n]i32) (adj: [n][n]i32) (steps: []i32) =
-  let (flow_sum, flow_cur, _, i) =
-    loop (flow_sum, flow_cur, here, i) = (0,0,0,1) for there in steps do
+def eval [n] (start: i32) (flow: [n]i32) (adj: [n][n]i32) (steps: []i32) =
+  let (sum, _, remaining) =
+    loop (sum, here, remaining) = (0,start,30) for there in steps do
     let t = adj[here,there] + 1
-    in trace (flow_sum + t * flow_cur,
-              flow_cur + flow[there],
-              there,
-              i+t)
-  in flow_sum + flow_cur * (30-i+1)
+    let remaining = remaining - t
+    in (sum + remaining * flow[there],
+        there,
+        remaining)
+  in (remaining, sum)
 
-entry part1 s l =
-  let vs = parse s
-  let (flow,adj) = adjacency vs |> find_paths |> shrink (map (.flow) vs)
-  in eval flow adj l
+-- The first 'i' nodes of 'nodes' have been visited in the given
+-- order, and the rest are in arbitrary order.
+type path [n] = {nodes:[n]i32,remaining:i32,value:i32}
+
+def invalid (p: path[]) = p.remaining < 0
+
+def next_node [n] (nodes: *[n]i32) (i: i64) (j: i64) : *[n]i32 =
+  let next = nodes[i+j]
+  let tmp = nodes[i]
+  let nodes[i] = next
+  let nodes[i+j] = tmp
+  in nodes
+
+def grow [n] (start: i32) (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: path[n]) : [](path[n]) =
+  tabulate (n-i) (\j ->
+                    let nodes = next_node (copy p.nodes) i j
+                    let (remaining,value) = eval start flow adj (take (i+1) nodes)
+                    in {nodes,remaining,value})
+
+def evolve [n] (start: i32) (flow: [n]i32) (adj: [n][n]i32) (ps: [](path[n])) : [](path[n]) =
+  (loop (ps,i) = (ps,0) while i < n do
+   let n' = n-trace i
+   in (ps ++
+          filter (invalid >-> not)
+          (flatten (map (\p -> grow start flow adj i p |> exactly n') ps)),
+       i+1))
+  |> (.0)
+
+entry part1 s =
+  let (start,vs) = parse s
+  let [n] (flow : [n]i32,adj : [n][n]i32) = adjacency vs |> find_paths |> shrink start (map (.flow) vs)
+  let start = i32.i64 (n-1)
+  let (remaining,value) = eval start flow adj []
+  let res = evolve start flow adj [{nodes=map i32.i64 (iota n),remaining,value}]
+  let best = map (.value) res |> i32.maximum
+  let best_path = from_opt res[0] (find (\p -> p.value == best) res)
+  in best_path.value
+
+-- ==
+-- entry: part1
+-- input @ data/16.input
+-- output { 2265i32 }
