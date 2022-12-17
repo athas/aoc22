@@ -2,11 +2,10 @@
 -- AOC.  I really wish these problems were calibrated to be solvable
 -- without too much time investment; I'm just looking for fun little
 -- tasks to do every day in December!  I have enough real challenges
--- at my job.
+-- at my job.  Part 2 works but it is much too slow and I do not enjoy
+-- working on this.
 
 import "utils"
-
-def testinput = "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB\nValve BB has flow rate=13; tunnels lead to valves CC, AA\nValve CC has flow rate=2; tunnels lead to valves DD, BB\nValve DD has flow rate=20; tunnels lead to valves CC, AA, EE\nValve EE has flow rate=3; tunnels lead to valves FF, DD\nValve FF has flow rate=0; tunnels lead to valves EE, GG\nValve GG has flow rate=0; tunnels lead to valves FF, HH\nValve HH has flow rate=22; tunnel leads to valve GG\nValve II has flow rate=0; tunnels lead to valves AA, JJ\nValve JJ has flow rate=21; tunnel leads to valve II\n"
 
 type valve = {flow: i32, tunnels: [5]i64}
 
@@ -63,47 +62,101 @@ def eval_step [n] (flow: [n]i32) (adj: [n][n]i32)
       there,
       remaining)
 
--- The first 'i' nodes of 'nodes' have been visited in the given
--- order, and the rest are in arbitrary order.
-type path [n] = {nodes:[n]i32,remaining:i32,value:i32,here:i32}
+type path = {visited:u64,remaining:i32,value:i32,here:i32}
 
-def invalid (p: path[]) = p.remaining < 0
+def invalid (p: path) = p.remaining < 0
 
-def next_node [n] (nodes: *[n]i32) (i: i64) (j: i64) : *[n]i32 =
-  let next = nodes[i+j]
-  let tmp = nodes[i]
-  let nodes[i] = next
-  let nodes[i+j] = tmp
-  in nodes
+def next_node (visited: u64) (j: i64) : i32 =
+  (loop (i,j) = (0,j) while u64.get_bit i visited != 0 || j > 0 do
+     (i+1,if u64.get_bit i visited==0 then j-1 else j))
+  |> (.0)
 
-def grow [n] (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: path[n]) : [](path[n]) =
+def grow [n] (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: path) : []path =
   tabulate (n-i) (\j ->
-                    let nodes = next_node (copy p.nodes) i j
+                    let next = next_node p.visited j
                     let (value,there,remaining) =
-                      eval_step flow adj p.value p.here p.remaining nodes[i]
-                    in {nodes,remaining,value,here=there})
+                      eval_step flow adj p.value p.here p.remaining next
+                    in {visited=u64.set_bit next p.visited 1,
+                        remaining,
+                        value,
+                        here=there})
 
-def evolve [n] (flow: [n]i32) (adj: [n][n]i32) (ps: [](path[n])) : [](path[n]) =
-  (loop (done,front,i) = ([],ps,0) while i < n do
-   let n' = n-i
-   let new = filter (invalid >-> not)
-                    (flatten (map (\p -> grow flow adj i p |> exactly n') front))
-   in (done ++ front, new, i+1))
-  |> (\(done,front,_) -> done ++ front)
+def evolve [n] (flow: [n]i32) (adj: [n][n]i32) (ps: []path) : i32 =
+  let (best,_,_) =
+    loop (best,front,i) = (0,ps,0) while i < n do
+    let n' = n-i
+    let new = filter (invalid >-> not)
+                     (flatten (map (\p -> grow flow adj i p |> exactly n') front))
+    in (best `i32.max` i32.maximum (map (.value) new), new, i+1)
+  in best
 
-entry part1 s =
+#[noinline]
+def process s =
   let (start,vs) = parse s
   let [n] (flow : [n]i32,adj : [n][n]i32) =
     adjacency vs |> find_paths |> shrink start (map (.flow) vs)
   let start = if start == 0 then 0 else i32.i64 (n-1)
+  in (start, flow, adj)
+
+entry part1 s =
+  let (start,flow,adj) = process s
   let (remaining,value) = (30,0)
-  let res = evolve flow adj [{nodes=map i32.i64 (iota n),
+  let res = evolve flow adj [{visited=0,
                               here=start,
                               remaining,
                               value}]
-  let best = map (.value) res |> i32.maximum
-  let best_path = from_opt res[0] (find (\p -> p.value == best) res)
-  in best_path.value
+  in res
+
+type elepath = {me:path,elephant:path}
+
+def elegrow [n] (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: elepath) : []elepath =
+  tabulate (n-i) (\j ->
+                    let next = next_node (p.me.visited|p.elephant.visited) j
+                    let a =
+                      let (value,there,remaining) =
+                        eval_step flow adj p.me.value p.me.here p.me.remaining next
+                      in {me={visited=u64.set_bit next p.me.visited 1,
+                              remaining,
+                              value,
+                              here=there},
+                          elephant=p.elephant}
+                    let b =
+                      let (value,there,remaining) =
+                        eval_step flow adj p.elephant.value p.elephant.here p.elephant.remaining next
+                      in {me=p.me,
+                          elephant={visited=u64.set_bit next p.elephant.visited 1,
+                                    remaining,
+                                    value,
+                                    here=there}}
+                    in (a,b))
+  |> unzip |> uncurry (++)
+
+def elevolve [n] (flow: [n]i32) (adj: [n][n]i32) (ps: []elepath) : i32 =
+  let (best,_,_) =
+    loop (best,front,i) = (0,ps,0) while i < n do
+    let n' = n-i
+    let n2' = 2*n'
+    let new = filter (\p -> not (invalid p.me) &&
+                            not (invalid p.elephant))
+                     (flatten (map (\p -> elegrow flow adj i p |> exactly n2')
+                                   front))
+    let k = length new
+    in (best `i32.max` i32.maximum (map (\p -> p.me.value + p.elephant.value) new),
+        exactly (trace k) new, i+1)
+  in best
+
+entry part2 s =
+  let (start,flow,adj) = process s
+  let (remaining,value) = (26,0)
+  let res = elevolve flow adj [{me={visited=0,
+                                    here=start,
+                                    remaining,
+                                    value},
+                                elephant={visited=0,
+                                          here=start,
+                                          remaining,
+                                          value}}]
+  in res
 
 -- ==
 -- entry: part1
