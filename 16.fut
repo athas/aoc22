@@ -2,8 +2,7 @@
 -- AOC.  I really wish these problems were calibrated to be solvable
 -- without too much time investment; I'm just looking for fun little
 -- tasks to do every day in December!  I have enough real challenges
--- at my job.  Part 2 works but it is much too slow and I do not enjoy
--- working on this.
+-- at my job.
 
 import "utils"
 
@@ -81,14 +80,13 @@ def grow [n] (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: path) : []path =
                         value,
                         here=there})
 
-def evolve [n] (flow: [n]i32) (adj: [n][n]i32) (ps: []path) : i32 =
-  let (best,_,_) =
-    loop (best,front,i) = (0,ps,0) while i < n do
-    let n' = n-i
-    let new = filter (invalid >-> not)
-                     (flatten (map (\p -> grow flow adj i p |> exactly n') front))
-    in (best `i32.max` i32.maximum (map (.value) new), new, i+1)
-  in best
+def evolve [n] (flow: [n]i32) (adj: [n][n]i32) (ps: []path) : []path =
+  (loop (done,front,i) = ([],ps,0) while i < n do
+   let n' = n-i
+   let new = filter (invalid >-> not)
+                    (flatten (map (\p -> grow flow adj i p |> exactly n') front))
+   in (done ++ front, new, i+1))
+  |> (\(done,front,_) -> done ++ front)
 
 #[noinline]
 def process s =
@@ -98,67 +96,34 @@ def process s =
   let start = if start == 0 then 0 else i32.i64 (n-1)
   in (start, flow, adj)
 
-entry part1 s =
-  let (start,flow,adj) = process s
-  let (remaining,value) = (30,0)
+#[noinline]
+def solve start flow adj remaining =
   let res = evolve flow adj [{visited=0,
                               here=start,
                               remaining,
-                              value}]
+                              value=0}]
   in res
 
-type elepath = {me:path,elephant:path}
-
-def elegrow [n] (flow: [n]i32) (adj: [n][n]i32) (i: i64) (p: elepath) : []elepath =
-  tabulate (n-i) (\j ->
-                    let next = next_node (p.me.visited|p.elephant.visited) j
-                    let a =
-                      let (value,there,remaining) =
-                        eval_step flow adj p.me.value p.me.here p.me.remaining next
-                      in {me={visited=u64.set_bit next p.me.visited 1,
-                              remaining,
-                              value,
-                              here=there},
-                          elephant=p.elephant}
-                    let b =
-                      let (value,there,remaining) =
-                        eval_step flow adj p.elephant.value p.elephant.here p.elephant.remaining next
-                      in {me=p.me,
-                          elephant={visited=u64.set_bit next p.elephant.visited 1,
-                                    remaining,
-                                    value,
-                                    here=there}}
-                    in (a,b))
-  |> unzip |> uncurry (++)
-
-def elevolve [n] (flow: [n]i32) (adj: [n][n]i32) (ps: []elepath) : i32 =
-  let (best,_,_) =
-    loop (best,front,i) = (0,ps,0) while i < n do
-    let n' = n-i
-    let n2' = 2*n'
-    let new = filter (\p -> not (invalid p.me) &&
-                            not (invalid p.elephant))
-                     (flatten (map (\p -> elegrow flow adj i p |> exactly n2')
-                                   front))
-    let k = length new
-    in (best `i32.max` i32.maximum (map (\p -> p.me.value + p.elephant.value) new),
-        exactly (trace k) new, i+1)
-  in best
+entry part1 s =
+  let (start,flow,adj) = process s
+  let res = solve start flow adj 30
+  in map (.value) res |> i32.maximum
 
 entry part2 s =
   let (start,flow,adj) = process s
-  let (remaining,value) = (26,0)
-  let res = elevolve flow adj [{me={visited=0,
-                                    here=start,
-                                    remaining,
-                                    value},
-                                elephant={visited=0,
-                                          here=start,
-                                          remaining,
-                                          value}}]
-  in res
+  let p1s = solve start flow adj 26
+  let p2s = solve start flow adj 26
+  let compatible p1 p2 = (p1.visited & p2.visited) == 0
+  let best_of p1 =
+    i32.maximum (map (\p2 -> if compatible p1 p2 then p1.value + p2.value else 0) p2s)
+  in map best_of p1s |> i32.maximum
 
 -- ==
 -- entry: part1
 -- input @ data/16.input
 -- output { 2265i32 }
+
+-- ==
+-- entry: part2
+-- input @ data/16.input
+-- output { 2811i32 }
