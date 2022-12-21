@@ -1,4 +1,5 @@
 import "lib/github.com/diku-dk/segmented/segmented"
+import "lib/github.com/diku-dk/sorts/merge_sort"
 
 type char = u8
 type string [n] = [n]char
@@ -130,3 +131,10 @@ def argmin 'a (lte: a -> a -> bool) (as: []a) : i64 =
                 case (_, -1) -> i
                 case _ -> if as[i] `lte` as[j] then i else j
   in reduce cmp (-1) (indices as)
+
+def dedup eq lte ps =
+  let ps = merge_sort lte ps
+  let ok i x y = (i == 0 || not (eq x y),x)
+  in map3 ok (indices ps) ps (rotate 1 ps)
+     |> filter (.0)
+     |> map (.1)

@@ -5,7 +5,6 @@
 -- This one is possibly too slow to run in GitHub Actions.
 
 import "utils"
-import "lib/github.com/diku-dk/sorts/merge_sort"
 
 def testinput = "Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.\nBlueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.\n"
 
@@ -104,13 +103,6 @@ def plan_lte (a: plan) (b: plan): bool =
   then a.stash `res_lte` b.stash
   else false
 
-def dedup (ps: []plan) : []plan =
-  let ps = merge_sort plan_lte ps
-  let ok i x y = (i == 0 || x!=y,x)
-  in map3 ok (indices ps) ps (rotate 1 ps)
-     |> filter (.0)
-     |> map (.1)
-
 def evolve (t: i32) (b: blueprint) (ps: []plan) : []plan =
   loop ps for _i < t do
     ps
@@ -119,7 +111,7 @@ def evolve (t: i32) (b: blueprint) (ps: []plan) : []plan =
     |> filter (.0)
     |> map (.1)
     |> prune
-    |> dedup
+    |> dedup (==) plan_lte
 
 entry part1 s =
   let bs = parse s
