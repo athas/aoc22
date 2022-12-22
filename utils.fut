@@ -138,3 +138,5 @@ def dedup eq lte ps =
   in map3 ok (indices ps) ps (rotate 1 ps)
      |> filter (.0)
      |> map (.1)
+
+def imap f xs = map2 f (indices xs) xs
