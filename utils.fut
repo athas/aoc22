@@ -140,3 +140,9 @@ def dedup eq lte ps =
      |> map (.1)
 
 def imap f xs = map2 f (indices xs) xs
+
+def indices_2d [n][m] 't (_: [n][m]t) = tabulate_2d n m (\i j -> (i,j))
+
+def hist_2d 'a [k] (op: a -> a -> a) (ne: a) (n: i64) (m: i64) (is: [k](i64,i64)) (as: [k]a) : *[n][m]a =
+  reduce_by_index_2d (replicate n (replicate m ne)) op ne is as
+
