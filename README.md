@@ -1,5 +1,7 @@
 # Advent of [Futhark](https://futhark-lang.org)
 
+[See reflections here.](https://futhark-lang.org/blog/2022-12-25-reflections-on-advent-of-code.html)
+
 I also [did this in
 2018](https://github.com/athas/advent_of_code_2018), but then Snektron
 upstaged me by doing a [much better solution in

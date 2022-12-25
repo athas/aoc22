@@ -1,5 +1,5 @@
--- This one is quite clean.  The use of histograms is a bit clumsy
--- perhaps due to its sparsity, but it should be quite efficient.
+-- This one is quite clean.  Using bit vectors to detect duplicates
+-- doesn't seem like it should work, but it does.
 
 import "utils"
 

@@ -1,3 +1,6 @@
+-- Because of how limited this virtual machine is, we can actually
+-- compute its intermediate states with a scan.
+
 import "utils"
 
 type op = #addx i32 | #noop
