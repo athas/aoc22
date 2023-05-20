@@ -49,8 +49,8 @@ entry part2 s =
   let f i = let i' = i32.i64 i
             in close (i'%40) (find_state states (i'+1))
   let char b = if b then '#' else '.'
-  let nl s = concat_to 41 s "\n"
-  in tabulate 240 f |> map char |> unflatten 6 40 |> map nl |> flatten
+  let nl s = s ++ "\n"
+  in tabulate 240 f |> map char |> resize (6*40) |> unflatten |> map nl |> flatten
 
 -- ==
 -- entry: part1

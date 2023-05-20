@@ -23,7 +23,7 @@ entry part2 (s: string[]) =
     in u64.ctz (reduce (|) 0 (map mask l1)
                 & reduce (|) 0 (map mask l2)
                 & reduce (|) 0 (map mask l3))
-  in unflatten (length ls / 3) 3 ls |> map on_group |> i32.sum
+  in resize ((length ls / 3)*3) ls |> unflatten |> map on_group |> i32.sum
 
 -- ==
 -- entry: part1

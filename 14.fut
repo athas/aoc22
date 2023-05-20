@@ -61,7 +61,7 @@ def mkworld s =
   let flat (x,y) = i64.i32 y*(max_x+1)+i64.i32 x
   let rocks = expand linelength coord lines
   in spread ((max_y+1)*(max_x+1)) air (map flat rocks) (map (const rock) rocks)
-     |> unflatten (max_y+1) (max_x+1)
+     |> unflatten
 
 entry part1 s = sim (500,0) (mkworld s)
 

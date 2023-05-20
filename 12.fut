@@ -39,8 +39,8 @@ def parse_grid (s: string[]) =
   -- splitter.
   let [n][m] (grid: [n][m]char) =
     copy (if length s == 45
-          then s |> unflatten 5 9 |> map (take 8)
-          else s |> unflatten 41 182 |> map (take 181))
+          then s |> resize (5*9) |> unflatten |> map (take 8)
+          else s |> resize (41*182) |> unflatten |> map (take 181))
   let start = find_index_of grid 'S'
   let end = find_index_of grid 'E'
   let grid[start.0,start.1] = 'a'

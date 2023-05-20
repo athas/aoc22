@@ -47,7 +47,7 @@ def put_cubes [nx][ny][nz] (grid: *[nx][ny][nz]cell) (cubes: []cube) =
   let flat_idx c =
     i64.i32 c.x * (ny*nz) + i64.i32 c.y * nz + i64.i32 c.z
   in scatter (flatten_3d grid) (map flat_idx cubes) (map (const #cube) cubes)
-     |> unflatten_3d nx ny nz
+     |> resize (nx*ny*nz) |> unflatten_3d
 
 def find_steam nx ny nz cubes : [nx][ny][nz]bool =
   let grid = tabulate_3d nx ny nz

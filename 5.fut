@@ -14,7 +14,8 @@ def parse (s: string[]) =
                        let (from,l') = span (==' ') (drop 6 l')
                        let (to,_) = span (==' ') (drop 4 l')
                        in (atoi num, atoi from - 1, atoi to - 1)
-  in ((unflatten num_stack_lines header_line_len stack_lines)
+  in (resize (num_stack_lines*header_line_len) stack_lines
+      |> unflatten
       |> map on_stack_line
       |> (replicate 100 (replicate 9 ' ')++)
       |> transpose

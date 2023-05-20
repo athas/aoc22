@@ -3,7 +3,7 @@
 import "utils"
 
 def parse [n] (s: string[n]) =
-  unflatten (n/4) 4 s |> map (\l -> (l[0], l[2] - 'X' + 'A'))
+  resize ((n/4)*4) s |> unflatten |> map (\l -> (l[0], l[2] - 'X' + 'A'))
 
 def shape_score (s: u8) : i32 =
   match s case 'A' -> 1

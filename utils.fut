@@ -85,7 +85,7 @@ def count 'a (p: a -> bool) (xs: []a): i32 =
 def index_of_first p xs =
   loop i = 0 while i < length xs && !p xs[i] do i + 1
 
-def span p xs = split (index_of_first p xs) xs
+def span p xs = let i = index_of_first p xs in (take i xs, drop i xs)
 
 def windows k s =
   map (\i -> take k (drop i s)) (take (length s - k) (indices s))
@@ -123,7 +123,7 @@ def find 'a (p: a->bool) (xs:[]a) : opt a =
      |> map (\x -> if p x then #some x else #none)
      |> reduce op #none
 
-def pad_to k x xs = concat_to k xs (replicate (k - length xs) x)
+def pad_to k x xs = resize k (xs ++ replicate (k - length xs) x)
 
 def argmin 'a (lte: a -> a -> bool) (as: []a) : i64 =
   let cmp i j = match (i,j)
