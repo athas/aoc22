@@ -123,7 +123,7 @@ def find 'a (p: a->bool) (xs:[]a) : opt a =
      |> map (\x -> if p x then #some x else #none)
      |> reduce op #none
 
-def pad_to k x xs = resize k (xs ++ replicate (k - length xs) x)
+def pad_to k x xs = sized k (xs ++ replicate (k - length xs) x)
 
 def argmin 'a (lte: a -> a -> bool) (as: []a) : i64 =
   let cmp i j = match (i,j)
