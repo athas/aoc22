@@ -10,7 +10,7 @@ def visible (xs: []i32) =
 def parse [l] (s: string [l]) =
   -- Careful to cut off the newlines.
   let n = i64.f32 (f32.sqrt (f32.i64 l))
-  in resize (n*(n+1)) s
+  in sized (n*(n+1)) s
      |> unflatten
      |> map (take n)
      |> map (map (\x -> x - '0'))

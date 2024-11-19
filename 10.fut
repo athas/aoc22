@@ -50,7 +50,7 @@ entry part2 s =
             in close (i'%40) (find_state states (i'+1))
   let char b = if b then '#' else '.'
   let nl s = s ++ "\n"
-  in tabulate 240 f |> map char |> resize (6*40) |> unflatten |> map nl |> flatten
+  in tabulate 240 f |> map char |> sized (6*40) |> unflatten |> map nl |> flatten
 
 -- ==
 -- entry: part1
